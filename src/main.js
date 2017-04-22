@@ -1,7 +1,7 @@
 var width = window.innerWidth;
 var height = window.innerHeight;
 var renderer = new PIXI.autoDetectRenderer(width, height, {
-  antialias: false
+  antialias: true
 });
 var stage = new PIXI.Container();
 document.body.appendChild(renderer.view);
@@ -14,7 +14,6 @@ var bg;
 // var big;
 var planet;
 var player;
-var plantFlower;
 var items = new Array();
 var player_speed = 0.01;
 var key = {
@@ -33,6 +32,7 @@ PIXI.loader
     .add("img/man_walk.png")
     .add("img/planet.png")
     .add("img/big_planet.png")
+    .add("img/projectile.png")
     .add("img/space.png")
     .add("img/sunflower.png")
     .load(setup);
@@ -89,14 +89,6 @@ function setup() {
   };
   stage.addChild(moon);
 
-  // /*-------- big planet --------*/
-  // big = new PIXI.Sprite(res["img/big_planet.png"].texture);
-  // big.anchor.set(0.5, 0);
-  // big.update = function () {
-  //   big.x = cX+radius;
-  //   big.y = -100;
-  // }
-  // stage.addChild(big);
 
   /*-------- Planet --------*/
   planet = new PIXI.Sprite(res["img/planet.png"].texture);
@@ -137,44 +129,6 @@ function setup() {
   }
   stage.addChild(player);
 
-  /*-------- Flower --------*/
-  var Flower = function(rot) {
-    this.rotation = rot;
-    this.height = 2;
-    this.maxHeight = Math.random()*8 + 40;
-    this.stalk = new PIXI.Graphics();
-    // Sunflower == 30x30 px
-    this.flower = new PIXI.Sprite(res["img/sunflower.png"].texture);
-    this.flower.anchor.set(0.5, 0.5);
-    stage.addChild(this.stalk);
-    stage.addChild(this.flower);
-  };
-  Flower.prototype.update = function () {
-    if(this.height < this.maxHeight) {
-      this.height += 0.2;
-    }
-    var progress = this.height/this.maxHeight;
-    this.flower.width = 30*progress;
-    this.flower.height = 30*progress;
-    this.x = pos_from_rotation(this.rotation, 2).x;
-    this.y = pos_from_rotation(this.rotation, 2).y;
-    var toX = pos_from_rotation(this.rotation, -this.height).x;
-    var toY = pos_from_rotation(this.rotation, -this.height).y;
-
-    this.flower.x = toX;
-    this.flower.y = toY;
-
-    this.stalk.clear();
-    this.stalk.lineStyle(2, 0x55bb22, 1);
-    this.stalk.moveTo(this.x, this.y);
-    this.stalk.lineTo(toX,toY);
-    this.stalk.endFill();
-  };
-
-  plantFlower = function(rot) {
-      items.push(new Flower(rot));
-  }
-
   /*-------- Start game --------*/
   state = playing;
 }
@@ -200,6 +154,10 @@ function loop () {
 
 // Game is active
 function playing(delta) {
+  cY = height*0.6 + Math.sin(new Date().getTime()/2000)*8
+  cX = width/2;
+
+
   sun.update(delta);
   moon.update(delta);
   planet.update(delta);
@@ -209,6 +167,13 @@ function playing(delta) {
 
   for(var i = 0; i<items.length; i++) {
     items[i].update(delta);
+  }
+
+  var i = items.length;
+  while (i--) {
+    if(items[i].dead) {
+      items.splice(i, 1);
+    }
   }
 
   /*
@@ -233,8 +198,6 @@ Window resized, or keys were pressed. Do
 something about it.
 -------------------------------------------*/
 window.addEventListener("resize", function () {
-  cX = width/2;
-  cY = height*0.6;
   width = window.innerWidth;
   height = window.innerHeight;
   if(width > 1920) bg.width = width;
@@ -247,10 +210,11 @@ window.addEventListener("keydown", function(e) {
   if(e.keyCode == 37) key["left"] = true;
   if(e.keyCode == 39) key["right"] = true;
   if(e.keyCode == 38) key["up"] = true;
-  if(e.keyCode == 40) key["down"] = true;
+  if(e.keyCode == 40) {
+    items.push(new Flower(player.rotation-Math.PI/2, items.length));
+  }
   if(e.keyCode == 32) {
-    //space key
-    plantFlower(player.rotation-Math.PI/2);
+    items.push(new Projectile(player.rotation-Math.PI/2, items.length));
   }
 });
 
