@@ -7,14 +7,18 @@ var stage = new PIXI.Container();
 document.body.appendChild(renderer.view);
 
 var state = function() {};
+var vertical_center = 0.5;
 var cX = width/2;
-var cY = height*0.6;
-var radius = 200;
+var cY = height*vertical_center;
+var radius = 160;
 var bg;
 // var big;
 var planet;
 var player;
+var power_bar;
+var power_bar_fill;
 var items = new Array();
+var bottle;
 var player_speed = 0.01;
 var key = {
   left: false,
@@ -33,6 +37,9 @@ PIXI.loader
     .add("img/planet.png")
     .add("img/big_planet.png")
     .add("img/projectile.png")
+    .add("img/bottle.png")
+    .add("img/power_bar_empty.png")
+    .add("img/power_bar_fill.png")
     .add("img/space.png")
     .add("img/sunflower.png")
     .load(setup);
@@ -93,8 +100,8 @@ function setup() {
   /*-------- Planet --------*/
   planet = new PIXI.Sprite(res["img/planet.png"].texture);
   planet.anchor.set(0.5, 0.5);
-  planet.width = radius*2+150;
-  planet.height = radius*2+150;
+  planet.width = radius*2.7;
+  planet.height = radius*2.7;
   planet.update = function () {
     this.x = cX;
     this.y = cY;
@@ -108,15 +115,20 @@ function setup() {
   player.friction = 0.25;
   player.planet_offset = 8;
   player.anchor.set(0.5, 1);
+  player.charge = 0;
+  power_bar = new PIXI.Sprite(res["img/power_bar_empty.png"].texture);
+  power_bar_fill = new PIXI.Sprite(res["img/power_bar_fill.png"].texture);
   player.update = function(delta) {
     if(key.left) {
       this.speed -= this.accl;
-      this.texture = PIXI.loader.resources["img/man_walk.png"].texture;
+      this.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
+      this.scale.x = -1;
     } else if(key.right) {
       this.speed += this.accl;
-      this.texture = PIXI.loader.resources["img/man_walk.png"].texture;
+      this.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
+      this.scale.x = 1;
     } else {
-      this.texture = PIXI.loader.resources["img/man.png"].texture;
+      this.texture = res["img/man.png"].texture;
     }
     this.speed *= 1-this.friction;
     this.rotation += (this.speed)*delta;
@@ -126,8 +138,28 @@ function setup() {
     this.x = coords.x;
     this.y = coords.y;
 
+    // Throwing
+    if(key["space"]) {
+        this.charge += delta;
+    } else {
+      if(this.charge > 0) {
+        items.push(new Projectile(player.rotation-Math.PI/2, this.charge));
+        this.charge = 0;
+      }
+    }
+
   }
   stage.addChild(player);
+  stage.addChild(power_bar);
+  stage.addChild(power_bar_fill);
+
+
+  // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEM
+  bottle = new PIXI.Sprite(res["img/bottle.png"].texture);
+  bottle.height *= 0.4;
+  bottle.width *= 0.4;
+  bottle.rotation = -0.2;
+  stage.addChild(bottle);
 
   /*-------- Start game --------*/
   state = playing;
@@ -152,15 +184,21 @@ function loop () {
   renderer.render(stage);
 }
 
+
+
+
 // Game is active
 function playing(delta) {
-  cY = height*0.6 + Math.sin(new Date().getTime()/2000)*8
+  cY = height*vertical_center + Math.sin(new Date().getTime()/2000)*8
   cX = width/2;
 
 
   sun.update(delta);
   moon.update(delta);
   planet.update(delta);
+
+  bottle.x = cX-108;
+  bottle.y = cY-193;
   // big.update(delta);
 
   player.update(delta);
@@ -202,20 +240,20 @@ window.addEventListener("resize", function () {
   height = window.innerHeight;
   if(width > 1920) bg.width = width;
   if(height > 1080) bg.height = height;
+
+  //radius = height/6; Roughly.......
+
   renderer.resize(width, height);
 });
 
 window.addEventListener("keydown", function(e) {
-  console.log(e.keyCode);
   if(e.keyCode == 37) key["left"] = true;
   if(e.keyCode == 39) key["right"] = true;
   if(e.keyCode == 38) key["up"] = true;
   if(e.keyCode == 40) {
     items.push(new Flower(player.rotation-Math.PI/2, items.length));
   }
-  if(e.keyCode == 32) {
-    items.push(new Projectile(player.rotation-Math.PI/2, items.length));
-  }
+  if(e.keyCode == 32) key["space"] = true;
 });
 
 window.addEventListener("keyup", function(e) {
@@ -223,4 +261,5 @@ window.addEventListener("keyup", function(e) {
   if(e.keyCode == 39) key["right"] = false;
   if(e.keyCode == 38) key["up"] = false;
   if(e.keyCode == 40) key["down"] = false;
+  if(e.keyCode == 32) key["space"] = false;
 });

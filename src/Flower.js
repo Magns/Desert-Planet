@@ -14,7 +14,7 @@ var Flower = function(rot) {
 };
 Flower.prototype.update = function () {
   if(this.height < this.maxHeight) {
-    this.height += 0.2;
+    this.height += 0.02;
   }
   var progress = this.height/this.maxHeight;
   this.flower.width = 30*progress;
