@@ -3,6 +3,7 @@ var height = window.innerHeight;
 var renderer = new PIXI.autoDetectRenderer(width, height, {
   antialias: true
 });
+var res = PIXI.loader.resources;
 var stage = new PIXI.Container();
 document.body.appendChild(renderer.view);
 
@@ -61,8 +62,6 @@ function pos_from_rotation(rot, offset) {
 Everything is loaded. Get things ready!
 -------------------------------------------*/
 function setup() {
-  var res = PIXI.loader.resources;
-
   /*-------- Background --------*/
   bg = new PIXI.Sprite(res["img/space.png"].texture);
   stage.addChild(bg);
@@ -109,49 +108,7 @@ function setup() {
   stage.addChild(planet);
 
   /*-------- Player --------*/
-  player = new PIXI.Sprite(res["img/man.png"].texture);
-  player.speed = 0;
-  player.accl = 0.5;
-  player.friction = 0.25;
-  player.planet_offset = 8;
-  player.anchor.set(0.5, 1);
-  player.charge = 0;
-  power_bar = new PIXI.Sprite(res["img/power_bar_empty.png"].texture);
-  power_bar_fill = new PIXI.Sprite(res["img/power_bar_fill.png"].texture);
-  player.update = function(delta) {
-    if(key.left) {
-      this.speed -= this.accl;
-      this.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
-      this.scale.x = -1;
-    } else if(key.right) {
-      this.speed += this.accl;
-      this.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
-      this.scale.x = 1;
-    } else {
-      this.texture = res["img/man.png"].texture;
-    }
-    this.speed *= 1-this.friction;
-    this.rotation += (this.speed)*delta;
-
-    var coords = pos_from_rotation(this.rotation-Math.PI/2,
-                                   this.planet_offset);
-    this.x = coords.x;
-    this.y = coords.y;
-
-    // Throwing
-    if(key["space"]) {
-        this.charge += delta;
-    } else {
-      if(this.charge > 0) {
-        items.push(new Projectile(player.rotation-Math.PI/2, this.charge));
-        this.charge = 0;
-      }
-    }
-
-  }
-  stage.addChild(player);
-  stage.addChild(power_bar);
-  stage.addChild(power_bar_fill);
+  player = new Player();
 
 
   // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEM

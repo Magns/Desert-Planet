@@ -4,7 +4,7 @@ var Projectile = function(rotation, force, direction) {
   this.y = pos_from_rotation(rotation, -30).y;
   this.sprite = new PIXI.Sprite(res["img/projectile.png"].texture)
   stage.addChild(this.sprite);
-  this.dir = rotation+Math.PI/2;
+  this.dir = direction;
   this.startVel = 1000*force;
   this.friction = 0.99;
   this.velX = Math.cos(this.dir)*this.startVel;

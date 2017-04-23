@@ -1,6 +1,4 @@
 /*-------- Flower --------*/
-var res = PIXI.loader.resources;
-
 var Flower = function(rot) {
   this.rotation = rot;
   this.height = 2;
