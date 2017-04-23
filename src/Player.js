@@ -1,9 +1,15 @@
+/*--------------------------------------------------
+                                              PLAYER
+I think he might be stuck here. We'll see!
+--------------------------------------------------*/
 var Player = function() {
-  // Create sprites
+  // Add sprites
   this.container = new PIXI.Container();
   this.character = new PIXI.Sprite(res["img/man.png"].texture);
   this.power_bar = new PIXI.Sprite(res["img/power_bar_empty.png"].texture);
   this.power_bar_fill = new PIXI.Sprite(res["img/power_bar_fill.png"].texture);
+  this.power_mask = new PIXI.Graphics();
+  this.power_bar_fill.mask = this.power_mask;
 
   // Set sprite positions
   this.character.anchor.set(0.5, 1);
@@ -24,6 +30,7 @@ var Player = function() {
   this.container.addChild(this.character);
   this.container.addChild(this.power_bar);
   this.container.addChild(this.power_bar_fill);
+  this.container.addChild(this.power_mask);
   stage.addChild(this.container);
 }
 
@@ -77,6 +84,13 @@ Player.prototype.update = function(delta) {
     }
   }
 
-  // TODO: Mask out power bar fill
-  this.power_bar_fill.scale.y = this.charge;
+  this.power_mask.clear();
+  this.power_mask.lineStyle(1, 0xFF00FF, 0.8);
+  this.power_mask.beginFill(0x00ff00, 0.3);
+  this.power_mask.moveTo(0, 0);
+  this.power_mask.lineTo(-30, 0);
+  this.power_mask.lineTo(-30, -this.charge*40);
+  this.power_mask.lineTo(0, -this.charge*40);
+  this.power_mask.lineTo(0, 0);
+
 }
