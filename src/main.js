@@ -13,14 +13,12 @@ var cX = width/2;
 var cY = height*vertical_center;
 var radius = 160;
 var bg;
-// var big;
 var planet;
 var player;
 var power_bar;
 var power_bar_fill;
 var items = new Array();
 var bottle;
-var player_speed = 0.01;
 var key = {
   left: false,
   right: false,
@@ -110,7 +108,6 @@ function setup() {
   /*-------- Player --------*/
   player = new Player();
 
-
   // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEM
   bottle = new PIXI.Sprite(res["img/bottle.png"].texture);
   bottle.height *= 0.4;
@@ -141,14 +138,10 @@ function loop () {
   renderer.render(stage);
 }
 
-
-
-
 // Game is active
 function playing(delta) {
   cY = height*vertical_center + Math.sin(new Date().getTime()/2000)*8
   cX = width/2;
-
 
   sun.update(delta);
   moon.update(delta);
@@ -170,17 +163,6 @@ function playing(delta) {
       items.splice(i, 1);
     }
   }
-
-  /*
-  ------- Move in and out on planet -------
-  if(key.up) {
-    player.planet_offset--;
-    player.height += 0.3;
-  } else if(key.down) {
-    player.planet_offset++;
-    player.height -= 0.3;
-  }
-  */
 }
 
 // Start loop
