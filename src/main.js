@@ -72,7 +72,7 @@ pauseGUI.y = 40;
 // MAIN MENU
 var mainMenuGUI = new PIXI.Container();
 
-var titleText = new PIXI.Text('-- TITLE --', textStyle);
+var titleText = new PIXI.Text(' DESERT PLANET ', textStyle);
 titleText.anchor.x = 0.5;
 mainMenuGUI.addChild(titleText);
 
@@ -114,6 +114,27 @@ if(reqFullScreen) {
   });
   mainMenuGUI.addChild(btn_fullscreen);
 }
+
+// Help
+var helpText = new PIXI.Text('CONTROLS', textStyle);
+helpText.y = 110;
+helpText.anchor.x = 0.5;
+mainMenuGUI.addChild(helpText);
+
+var helpText2 = new PIXI.Text('move: left/right', textStyle);
+helpText2.y = 140;
+helpText2.anchor.x = 0.5;
+mainMenuGUI.addChild(helpText2);
+
+var helpText3 = new PIXI.Text('throw: space', textStyle);
+helpText3.y = 170;
+helpText3.anchor.x = 0.5;
+mainMenuGUI.addChild(helpText3);
+
+var helpText4 = new PIXI.Text('use: E', textStyle);
+helpText4.y = 200;
+helpText4.anchor.x = 0.5;
+mainMenuGUI.addChild(helpText4);
 
 // Letters and other paper stuff.
 var PaperMenu = function(options) {
@@ -227,16 +248,50 @@ Blackout.prototype.update = function (delta) {
 };
 
 
-/*-------- Load resources --------*/
+/*-------------------------------------------
+                               LOAD RESOURCES
+
+-------------------------------------------*/
+
+var loadText = new PIXI.Text('Loading...', {
+  fill: ['#ffffff', '#cccccc'],
+  fontFamily: 'Arial',
+  fontSize: 11
+});
+loadText.x = 20;
+loadText.y = 20;
+fg.addChild(loadText);
+renderer.render(container);
+
+WebFontConfig = {
+    google: {
+        families: ['Ranga']
+    },
+
+    active: function() {
+      loadCheck();
+    }
+};
+
+(function() {
+    var wf = document.createElement('script');
+    wf.src = ('https:' === document.location.protocol ? 'https' : 'http') +
+        '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+    wf.type = 'text/javascript';
+    wf.async = 'true';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(wf, s);
+})();
+
 PIXI.loader
     .add("img/man.png")
     .add("img/man_walk.png")
     .add("img/planet.png")
     .add("img/planet_crash.png")
-    .add("img/big_planet.png")
     .add("img/projectile.png")
     .add("img/bottle.png")
     .add("img/note.png")
+    .add("img/map.png")
     .add("img/handwritten.png")
     .add("img/pizza.png")
     .add("img/ship.png")
@@ -245,7 +300,17 @@ PIXI.loader
     .add("img/power_bar_empty.png")
     .add("img/power_bar_fill.png")
     .add("img/space.png")
-    .load(setup);
+    .load(loadCheck);
+
+// Check if both fonts and images have loaded,
+// then run setup.
+var loaded = 0;
+function loadCheck() {
+  loaded++;
+  if(loaded >= 2) {
+    setup();
+  }
+}
 
 /*-------------------------------------------
                              HELPER FUNCTIONS
@@ -291,12 +356,12 @@ function onPlanet(x,y) {
 Everything is loaded. Get things ready!
 -------------------------------------------*/
 function setup() {
+  fg.removeChild(loadText);
   // Create background
   background = new PIXI.Sprite(res["img/space.png"].texture);
   bg.addChild(background);
 
   showMenu();
-  // startGame();
   loop();
 }
 
@@ -444,8 +509,10 @@ function pause(delta) {
 
 -------------------------------------------*/
 function showMenu() {
-  state = mainMenu;
+  mainMenu();
   fg.addChild(mainMenuGUI);
+  stage.removeChildren();
+  state = mainMenu;
 }
 
 function mainMenu(delta) {

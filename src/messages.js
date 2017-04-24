@@ -79,7 +79,7 @@ var messages = [
   // 7
   {
     message: " ",
-    //customBG: "img/handwritten.png",
+    customBG: "img/map.png",
     closeText: "OK",
     onRead: function () {
       player.inventory.map++;
