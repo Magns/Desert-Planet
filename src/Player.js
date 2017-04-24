@@ -29,6 +29,11 @@ var Player = function() {
   this.maxCharge = 2; // In seconds
   this.useDistance = 32; // How far you can interact with objects
   this.reply = false;
+  this.inventory = {
+    parts: 0,
+    glue: 0,
+    map: 0
+  }
 
   // Add sprites to stage
   this.container.addChild(this.character);
@@ -49,12 +54,12 @@ Player.prototype.update = function(delta) {
   Walk around the planet. Just rotate him around
   the center of the planet.
   --------------------------------------------------*/
-  if(key.left) {
+  if(key.left && state == playing) {
     this.speed -= this.accl;
     // TODO: OMG BETTER ANIMATION PLEASE
     this.character.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
     this.container.scale.x = -1;
-  } else if(key.right) {
+  } else if(key.right && state == playing) {
     this.speed += this.accl;
     this.character.texture = Math.random()>0.5 ? res["img/man_walk.png"].texture : res["img/man.png"].texture;
     this.container.scale.x = 1;
@@ -74,7 +79,7 @@ Player.prototype.update = function(delta) {
                                               INTERACT
   Use objects.
   --------------------------------------------------*/
-  if(key["e"]) {
+  if(key["e"] && state == playing) {
     key["e"] = false;
     var nearest = false;
     var nearest_dist = false;
@@ -101,7 +106,7 @@ Player.prototype.update = function(delta) {
   --------------------------------------------------*/
   var charge_percent = this.charge/this.maxCharge;
 
-  if(key["space"]) {
+  if(key["space"] && state == playing) {
     this.charge += delta;
     if(this.charge > this.maxCharge) {
       this.charge = this.maxCharge;

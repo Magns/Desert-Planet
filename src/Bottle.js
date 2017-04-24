@@ -10,23 +10,42 @@ var Bottle = function(options) {
   this.friction = 0.99;
   this.rotSpeed = 5*Math.random();
 
+  this.age = 0;
+  this.lifetime = 180; // How long should it live floating around space?
+
   this.sprite = new PIXI.Sprite(res["img/bottle.png"].texture);
   this.sprite.anchor.set(0.5, 0.65);
-  this.sprite.height *= 0.4;
-  this.sprite.width *= 0.4;
   this.sprite.rotation = Math.random()*Math.PI*2;
 
   // this.hitbox = new PIXI.Graphics();
   // this.hitbox.lineStyle(0);
   // this.hitbox.beginFill(0xff00ff, 0.2);
-  // this.hitbox.drawCircle(0, 0, 14*2.5);
+  // this.hitbox.drawCircle(0, 0, 14);
   // this.hitbox.endFill();
   // this.sprite.addChild(this.hitbox);
+
+  if(options.special) {
+    this.special = options.special;
+    if(this.special == "pizza") {
+      this.sprite.texture = res["img/pizza.png"].texture;
+      this.sprite.anchor.set(0.5, 0.5);
+    }
+
+    if(this.special == "glue") {
+      this.sprite.texture = res["img/glue.png"].texture;
+    }
+
+    if(this.special == "parts") {
+      this.sprite.texture = res["img/computerchip.png"].texture;
+    }
+  }
 
   stage.addChild(this.sprite);
 };
 
 Bottle.prototype.update = function(delta) {
+  this.age += delta;
+
   if(this.state == "falling") {
     var gravity = gravity_accl(this.x, this.y);
     this.xvel *= this.friction;
@@ -64,7 +83,42 @@ Bottle.prototype.land = function() {
   // this.relativey = this.y - cY;
 
   this.interact = function() {
-    showLetter(this.message);
+    if(messages[this.message] && messages[this.message].message === false) {
+      // This is getting rediculous
+      this.message = false;
+      // I have completely lost track of messages.
+      // Coding at the speed of spaghetti!
+    }
+    if(this.message !== false) {
+      showLetter(this.message);
+    }
+
+    if(this.special == "parts") {
+      player.inventory.parts++;
+      if(player.inventory.parts >= quest.parts) {
+        spawner.spawners[5] = 0;
+      }
+    }
+
+    if(this.special == "glue") {
+      player.inventory.glue++;
+      if(player.inventory.glue >= quest.glue) {
+        spawner.spawners[6] = 0;
+      }
+    }
+
+    if(this.special == "map") {
+      player.inventory.map++;
+      if(player.inventory.map >= quest.map) {
+        spawner.spawners[7] = 0;
+      }
+    }
+
+    this.kill();
+  }
+
+  if(this.state == "floating" && this.age > this.lifetime) {
+    this.kill();
   }
 }
 

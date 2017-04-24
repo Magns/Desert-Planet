@@ -6,8 +6,6 @@ var Projectile = function(rotation, force, direction, reply) {
 
   if(reply) {
     this.sprite = new PIXI.Sprite(res["img/bottle.png"].texture);
-    this.sprite.height *= 0.4;
-    this.sprite.width *= 0.4;
   } else {
     this.sprite = new PIXI.Sprite(res["img/projectile.png"].texture);
   }
@@ -62,5 +60,11 @@ Projectile.prototype.update = function(delta) {
 
   if(this.reply && this.age > 6 && this.reply.onSend) {
     this.reply.onSend();
+    this.kill();
   }
+};
+
+Projectile.prototype.kill = function () {
+  stage.removeChild(this.sprite);
+  this.dead = true;
 };

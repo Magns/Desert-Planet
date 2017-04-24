@@ -26,6 +26,7 @@ var moon;
 var items = new Array();
 var bottle;
 var letter;
+var blackout;
 var spawner;
 var key = {
   left: false,
@@ -37,6 +38,12 @@ var key = {
   p: false,
   enter: false,
   esc: false
+};
+var questLog;
+var quest = {
+  parts: 5,
+  glue: 2,
+  map: 1
 };
 
 /*-------------------------------------------
@@ -54,7 +61,7 @@ var textStyle = new PIXI.TextStyle({
 var letterStyle = new PIXI.TextStyle({
   fontFamily: 'Ranga',
   fontSize: 22,
-  fill: ['#550077', '#000000']
+  fill: ['#330055', '#000000']
 });
 
 // PAUSED
@@ -133,7 +140,7 @@ var PaperMenu = function(options) {
   this.btn_close.on('pointerup', function() {
     // Ooh, that's dirty
     letter.close();
-    options.onRead();
+    if(options.onRead) options.onRead();
   });
 
   this.container.addChild(this.bg);
@@ -153,22 +160,91 @@ PaperMenu.prototype.close = function() {
   state = playing;
 };
 
+// Quest log
+var QuestLog = function() {
+  this.text = new PIXI.Text(" ", textStyle);
+  this.text.anchor.set(0,1);
+  this.update();
+  fg.addChild(this.text);
+};
+QuestLog.prototype.update = function() {
+  this.text.x = 40;
+  this.text.y = height-40;
+  this.text.text = "Spare parts: " +
+                    player.inventory.parts + "/" + quest.parts + "\n" +
+                    "Glue: " +
+                    player.inventory.glue + "/" + quest.glue + "\n" +
+                    "Map: " +
+                    player.inventory.map + "/" + quest.map;
+
+  if(player.inventory.parts >= quest.parts)
+    if(player.inventory.glue >= quest.glue)
+      if(player.inventory.map >= quest.map)
+        this.win();
+};
+QuestLog.prototype.win = function () {
+  fg.removeChild(this.text);
+  questLog = false;
+  startEnding();
+  questLog = false;
+}
+
+// Fade to black
+Blackout = function() {
+  this.curtain = new PIXI.Graphics();
+  this.speed = 0.3;
+  this.holdTime = 1;
+  this.holdTimer = 0;
+  this.curtain.alpha = 0;
+  this.fading = "out";
+  fg.addChild(this.curtain);
+};
+Blackout.prototype.update = function (delta) {
+  this.curtain.clear();
+  this.curtain.beginFill(0x000000);
+  this.curtain.drawRect(0, 0, width, height);
+
+  if(this.fading == "out") {
+    this.curtain.alpha += delta*this.speed;
+    if(this.curtain.alpha > 1) {
+      this.curtain.alpha = 1;
+      this.fading = "hold";
+      return "black";
+    }
+  } else if(this.fading == "hold") {
+    this.holdTimer += delta;
+    if(this.holdTimer >= this.holdTime) {
+      this.fading = "in";
+    }
+  } else {
+    this.curtain.alpha -= delta*this.speed;
+    if(this.curtain.alpha <= 0) {
+      this.curtain.alpha = 0;
+      fg.removeChild(this.curtain);
+      blackout = false;
+    }
+  }
+};
+
 
 /*-------- Load resources --------*/
 PIXI.loader
     .add("img/man.png")
     .add("img/man_walk.png")
+    .add("img/planet.png")
     .add("img/planet_crash.png")
     .add("img/big_planet.png")
     .add("img/projectile.png")
     .add("img/bottle.png")
     .add("img/note.png")
     .add("img/handwritten.png")
- // .add("img/arrow.png")
+    .add("img/pizza.png")
+    .add("img/ship.png")
+    .add("img/glue.png")
+    .add("img/computerchip.png")
     .add("img/power_bar_empty.png")
     .add("img/power_bar_fill.png")
     .add("img/space.png")
-    .add("img/sunflower.png")
     .load(setup);
 
 /*-------------------------------------------
@@ -327,6 +403,7 @@ function playing(delta) {
   planet.update(delta);
   spawner.update(delta);
   player.update(delta);
+  if(questLog) questLog.update(delta);
 
   for(var i = 0; i<items.length; i++) {
     items[i].update(delta);
@@ -377,11 +454,15 @@ function mainMenu(delta) {
 }
 
 /*-------------------------------------------
-                                    MAIN MENU
+                                  SHOW LETTER
 
 -------------------------------------------*/
 function showLetter (id) {
-  letter = new PaperMenu(messages[id]);
+  var message = messages[id];
+  if(messages[id].expired) {
+    message = spam[Math.floor(Math.random()*spam.length)];
+  }
+  letter = new PaperMenu(message);
 }
 
 function hideLetter() {
@@ -390,4 +471,42 @@ function hideLetter() {
 
 function reading (delta) {
   letter.update();
+}
+
+/*-------------------------------------------
+                                       ENDING
+Congrats! You won!
+-------------------------------------------*/
+function startEnding() {
+  state = ending;
+  blackout = new Blackout();
+}
+function ending(delta) {
+  totaltime += delta;
+
+  // Update stuff still there
+  sun.update(delta);
+  moon.update(delta);
+  planet.update(delta);
+  player.update(delta);
+
+  for(var i = 0; i<items.length; i++) {
+    items[i].update(delta);
+  }
+
+  // Black out everything
+  if(blackout) {
+    if(blackout.update(delta) == "black") {
+        stage.removeChild(player.container);
+        planet.texture = res["img/planet.png"].texture;
+        for(var i = 0; i<items.length; i++) {
+          if(items[i].kill) items[i].kill();
+        }
+        items = [new SpaceShip()];
+    }
+  }
+
+  if(items[0] && items[0].gone) {
+    showMenu();
+  }
 }
