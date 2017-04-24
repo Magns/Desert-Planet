@@ -15,10 +15,9 @@ var radius = 160;
 var bg;
 var planet;
 var player;
-var power_bar;
-var power_bar_fill;
 var items = new Array();
 var bottle;
+var spawner;
 var key = {
   left: false,
   right: false,
@@ -26,8 +25,17 @@ var key = {
   down: false,
   space: false,
   e: false,
+  p: false,
   enter: false
 };
+var textStyle = new PIXI.TextStyle({
+  fontFamily: 'Ranga',
+  fontSize: 24,
+  fill: ['#ffffff', '#cccccc']
+});
+var pauseGUI = new PIXI.Text('Paused', textStyle);
+pauseGUI.x = 40;
+pauseGUI.y = 40;
 
 /*-------- Load resources --------*/
 PIXI.loader
@@ -37,6 +45,7 @@ PIXI.loader
     .add("img/big_planet.png")
     .add("img/projectile.png")
     .add("img/bottle.png")
+ // .add("img/arrow.png")
     .add("img/power_bar_empty.png")
     .add("img/power_bar_fill.png")
     .add("img/space.png")
@@ -52,6 +61,33 @@ function pos_from_rotation(rot, offset) {
     x: Math.cos(rot) * (radius-offset)+cX,
     y: Math.sin(rot) * (radius-offset)+cY
   }
+}
+
+function gravity_accl(x,y) {
+  var dy = cY - y;
+  var dx = cX - x;
+  var dist = Math.floor(dy*dy+dx*dx);
+
+  var gravity_angle = Math.atan2(dy, dx);
+  var gravity = 8;
+
+  var gravityX = Math.cos(gravity_angle)*gravity;
+  var gravityY = Math.sin(gravity_angle)*gravity;
+  return {
+    x: gravityX,
+    y: gravityY
+  }
+}
+
+function distance(x1,y1,x2,y2) {
+  var dx = x2-x1;
+  var dy = y2-y1;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+
+function onPlanet(x,y) {
+    var planet_dist = distance(cX,cY,x,y);
+    return planet_dist < radius;
 }
 
 /*-------------------------------------------
@@ -70,7 +106,7 @@ function setup() {
   sun.update = function () {
     this.x = radius*Math.sin(this.rotation)+cX;
     this.y = radius*1.2*Math.cos(this.rotation)+cY - radius*0.6;
-    this.rotation += 0.04*delta;
+    this.rotation += 0.02*delta;
     this.clear();
     this.lineStyle(0);
     this.beginFill(0xEEDD00, 1);
@@ -105,20 +141,23 @@ function setup() {
   };
   stage.addChild(planet);
 
-  /*-------- Player --------*/
+  // Create player
   player = new Player();
 
-  // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEM
-  bottle = new PIXI.Sprite(res["img/bottle.png"].texture);
-  bottle.height *= 0.4;
-  bottle.width *= 0.4;
-  bottle.rotation = -0.2;
-  stage.addChild(bottle);
+  // Spawn bottles
+  spawner = new Spawner();
 
-  /*-------- Start game --------*/
+  // Start game
   state = playing;
 }
 
+/*-------------------------------------------
+                                   START GAME
+Reset everything needed and start the game.
+-------------------------------------------*/
+function startGame() {
+
+}
 
 /*-------------------------------------------
                                     GAME LOOP
@@ -128,29 +167,38 @@ Where the magic happens.
 var now;
 var delta;
 var previous = new Date().getTime();
+var totaltime = 0;
 function loop () {
   now   = new Date().getTime();
   delta = Math.min(0.8, (now-previous)/1000);
   previous = now;
-
   window.requestAnimationFrame(loop);
+
+  cY = height*vertical_center + Math.sin(totaltime/3)*10
+  cX = width/2;
+
   state(delta);
+
   renderer.render(stage);
 }
 
-// Game is active
+/*-------------------------------------------
+                                      PLAYING
+Handle all player actions and gameplay.
+Called if var state == playing.
+-------------------------------------------*/
 function playing(delta) {
-  cY = height*vertical_center + Math.sin(new Date().getTime()/2000)*8
-  cX = width/2;
+  if(key["p"]) {
+    key["p"] = false;
+    return startPause();
+  }
+
+  totaltime += delta;
 
   sun.update(delta);
   moon.update(delta);
   planet.update(delta);
-
-  bottle.x = cX-108;
-  bottle.y = cY-193;
-  // big.update(delta);
-
+  spawner.update(delta);
   player.update(delta);
 
   for(var i = 0; i<items.length; i++) {
@@ -165,40 +213,31 @@ function playing(delta) {
   }
 }
 
-// Start loop
-loop();
+/*-------------------------------------------
+                                       PAUSED
+Simple... Don't do anything.
+-------------------------------------------*/
+function startPause() {
+  state = pause;
+  stage.addChild(pauseGUI);
+}
 
+function endPause() {
+  state = playing;
+  stage.removeChild(pauseGUI);
+}
+
+function pause(delta) {
+  if(key["p"]) {
+    key["p"] = false;
+    endPause();
+  }
+}
 
 /*-------------------------------------------
-                              EVENT LISTENERS
-Window resized, or keys were pressed. Do
-something about it.
+
+              LET THE GAMES BEGIN!
+
 -------------------------------------------*/
-window.addEventListener("resize", function () {
-  width = window.innerWidth;
-  height = window.innerHeight;
-  if(width > 1920) bg.width = width;
-  if(height > 1080) bg.height = height;
-
-  //radius = height/6; Roughly.......
-
-  renderer.resize(width, height);
-});
-
-window.addEventListener("keydown", function(e) {
-  if(e.keyCode == 37) key["left"] = true;
-  if(e.keyCode == 39) key["right"] = true;
-  if(e.keyCode == 38) key["up"] = true;
-  if(e.keyCode == 40) {
-    items.push(new Flower(player.rotation-Math.PI/2, items.length));
-  }
-  if(e.keyCode == 32) key["space"] = true;
-});
-
-window.addEventListener("keyup", function(e) {
-  if(e.keyCode == 37) key["left"] = false;
-  if(e.keyCode == 39) key["right"] = false;
-  if(e.keyCode == 38) key["up"] = false;
-  if(e.keyCode == 40) key["down"] = false;
-  if(e.keyCode == 32) key["space"] = false;
-});
+startGame();
+loop();

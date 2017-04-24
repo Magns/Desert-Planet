@@ -25,6 +25,7 @@ var Player = function() {
   this.friction = 0.25;
   this.planet_offset = 8;
   this.charge = 0;
+  this.maxCharge = 2; // In seconds
 
   // Add sprites to stage
   this.container.addChild(this.character);
@@ -40,6 +41,11 @@ Called on each pass of the game loop. Handle
 movement, animation, and actions.
 --------------------------------------------------*/
 Player.prototype.update = function(delta) {
+  /*--------------------------------------------------
+                                              Walking
+  Walk around the planet. Just rotate him around
+  the center of the planet.
+  --------------------------------------------------*/
   if(key.left) {
     this.speed -= this.accl;
     // TODO: OMG BETTER ANIMATION PLEASE
@@ -66,31 +72,38 @@ Player.prototype.update = function(delta) {
   Throwing or shooting whatever it is you do
   to get a hold of those darn bottles.
   --------------------------------------------------*/
+  var charge_percent = this.charge/this.maxCharge;
 
   if(key["space"]) {
     this.charge += delta;
+    if(this.charge > this.maxCharge) {
+      this.charge = this.maxCharge;
+    }
+
     this.power_bar.alpha = 1;
   } else {
     // Hide bar when not charging
     this.power_bar.alpha = 0;
     // Shoot if charged up
     if(this.charge > 0) {
-      var angle = this.rotation+this.container.scale.x*Math.PI*0.5-Math.PI/2;
+      var angle = this.rotation-Math.PI/2 //         <-- UP
+          +this.container.scale.x * Math.PI*0.35; // <-- left/right * angle
       items.push(new Projectile(this.rotation-Math.PI/2,
-                                this.charge,
+                                charge_percent,
                                 angle)
                 );
       this.charge = 0;
     }
   }
 
+  // Mask out the power meter fill
   this.power_mask.clear();
   this.power_mask.lineStyle(1, 0xFF00FF, 0.8);
   this.power_mask.beginFill(0x00ff00, 0.3);
   this.power_mask.moveTo(0, 0);
   this.power_mask.lineTo(-30, 0);
-  this.power_mask.lineTo(-30, -this.charge*40);
-  this.power_mask.lineTo(0, -this.charge*40);
+  this.power_mask.lineTo(-30, -charge_percent*53);
+  this.power_mask.lineTo(0, -charge_percent*53);
   this.power_mask.lineTo(0, 0);
 
 }

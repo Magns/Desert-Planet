@@ -10,32 +10,36 @@ var Projectile = function(rotation, force, direction) {
   this.velX = Math.cos(this.dir)*this.startVel;
   this.velY = Math.sin(this.dir)*this.startVel;
   this.age = 0;
+  // this.point = new PIXI.Point(this.x, this.y);
 };
+// Update
 Projectile.prototype.update = function(delta) {
   this.age += delta;
   this.velX *= this.friction;
   this.velY *= this.friction;
 
-  var dy = cY - this.y;
-  var dx = cX - this.x;
-  var dist = Math.floor(dy*dy+dx*dx);
+  var gravity = gravity_accl(this.x, this.y);
 
-  var gravity_angle = Math.atan2(dy, dx);
-  var gravity = 40;
-
-  var gravityX = Math.cos(gravity_angle)*gravity;
-  var gravityY = Math.sin(gravity_angle)*gravity;
-
-  this.velX += gravityX;
-  this.velY += gravityY;
+  this.velX += gravity.x;
+  this.velY += gravity.y;
 
   this.x += this.velX*delta;
   this.y += this.velY*delta;
 
+  // this.point.x = this.x;
+  // this.point.y = this.y;
+
+  for(var i = 0; i<items.length; i++) {
+    var t = items[i];
+    if(distance(this.x, this.y, t.x, t.y) < 14 && t.hit) {
+        t.hit();
+    }
+  }
+
   this.sprite.x = this.x;
   this.sprite.y = this.y;
 
-  if(this.age>2) {
+  if(onPlanet(this.x, this.y)) {
     stage.removeChild(this.sprite);
     this.dead = true;
   }
