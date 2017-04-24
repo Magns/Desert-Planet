@@ -1,1 +1,3 @@
-Ludum dare 38 entry. "A small world".
+# Desert Planet
+
+Entry for Ludum Dare 38.
