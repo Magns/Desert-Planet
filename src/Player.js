@@ -1,6 +1,7 @@
 /*--------------------------------------------------
                                               PLAYER
-I think he might be stuck here. We'll see!
+
+Not a very good pilot.
 --------------------------------------------------*/
 var Player = function() {
   // Add sprites
@@ -26,6 +27,8 @@ var Player = function() {
   this.planet_offset = 8;
   this.charge = 0;
   this.maxCharge = 2; // In seconds
+  this.useDistance = 32; // How far you can interact with objects
+  this.reply = false;
 
   // Add sprites to stage
   this.container.addChild(this.character);
@@ -68,6 +71,30 @@ Player.prototype.update = function(delta) {
   this.container.rotation = this.rotation;
 
   /*--------------------------------------------------
+                                              INTERACT
+  Use objects.
+  --------------------------------------------------*/
+  if(key["e"]) {
+    key["e"] = false;
+    var nearest = false;
+    var nearest_dist = false;
+    for(var i=0; i<items.length; i++) {
+      var t = items[i];
+      if(t.interact) {
+        var dist = distance(this.container.x, this.container.y, t.x, t.y);
+        if(!nearest || nearest_dist > dist) {
+          nearest = t;
+          nearest_dist = dist;
+        }
+      }
+    }
+
+    if(nearest_dist && nearest_dist < this.useDistance) {
+      nearest.interact();
+    }
+  }
+
+  /*--------------------------------------------------
                                               THROWING
   Throwing or shooting whatever it is you do
   to get a hold of those darn bottles.
@@ -90,8 +117,10 @@ Player.prototype.update = function(delta) {
           +this.container.scale.x * Math.PI*0.35; // <-- left/right * angle
       items.push(new Projectile(this.rotation-Math.PI/2,
                                 charge_percent,
-                                angle)
+                                angle,
+                                this.reply)
                 );
+      this.reply = false;
       this.charge = 0;
     }
   }

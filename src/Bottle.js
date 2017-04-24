@@ -1,4 +1,5 @@
 var Bottle = function(options) {
+  this.message = options.message;
   this.state = "floating"; // floating || falling || landed || opened
   this.xvel = options.xvel;
   this.yvel = options.yvel;
@@ -35,12 +36,7 @@ Bottle.prototype.update = function(delta) {
   }
 
   if(onPlanet(this.x, this.y) && this.state != "landed") {
-    this.state = "landed";
-    this.xvel = 0;
-    this.yvel = 0;
-    this.rotSpeed = 0;
-    // this.relativex = this.x - cX;
-    // this.relativey = this.y - cY;
+    this.land();
   }
 
   if(this.state == "landed") {
@@ -57,6 +53,19 @@ Bottle.prototype.update = function(delta) {
   this.sprite.x = this.x;
   this.sprite.y = this.y;
   this.sprite.rotation += this.rotSpeed*delta;
+}
+
+Bottle.prototype.land = function() {
+  this.state = "landed";
+  this.xvel = 0;
+  this.yvel = 0;
+  this.rotSpeed = 0;
+  // this.relativex = this.x - cX;
+  // this.relativey = this.y - cY;
+
+  this.interact = function() {
+    showLetter(this.message);
+  }
 }
 
 Bottle.prototype.hit = function () {

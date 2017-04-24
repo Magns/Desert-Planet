@@ -31,12 +31,12 @@ Spawner.prototype.update = function (delta) {
       starty = intersect.y-Math.sin(angle-Math.PI/2)*distance;
     }
 
-
     items.push(new Bottle({
       x: startx,
       y: starty,
       xvel: xvel,
-      yvel: yvel
+      yvel: yvel,
+      message: Math.floor(Math.random()*2)
     }));
     this.set();
   }

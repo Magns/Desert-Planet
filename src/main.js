@@ -4,7 +4,13 @@ var renderer = new PIXI.autoDetectRenderer(width, height, {
   antialias: true
 });
 var res = PIXI.loader.resources;
+var bg = new PIXI.Container();
 var stage = new PIXI.Container();
+var fg = new PIXI.Container();
+var container = new PIXI.Container();
+container.addChild(bg);
+container.addChild(stage);
+container.addChild(fg);
 document.body.appendChild(renderer.view);
 
 var state = function() {};
@@ -12,11 +18,14 @@ var vertical_center = 0.5;
 var cX = width/2;
 var cY = height*vertical_center;
 var radius = 160;
-var bg;
+var background;
 var planet;
 var player;
+var sun;
+var moon;
 var items = new Array();
 var bottle;
+var letter;
 var spawner;
 var key = {
   left: false,
@@ -26,25 +35,135 @@ var key = {
   space: false,
   e: false,
   p: false,
-  enter: false
+  enter: false,
+  esc: false
 };
+
+/*-------------------------------------------
+                                          GUI
+
+All menus, text and buttons.
+-------------------------------------------*/
+
 var textStyle = new PIXI.TextStyle({
   fontFamily: 'Ranga',
   fontSize: 24,
   fill: ['#ffffff', '#cccccc']
 });
-var pauseGUI = new PIXI.Text('Paused', textStyle);
+
+var letterStyle = new PIXI.TextStyle({
+  fontFamily: 'Ranga',
+  fontSize: 22,
+  fill: ['#550077', '#000000']
+});
+
+// PAUSED
+var pauseGUI = new PIXI.Text('Paused ', textStyle);
 pauseGUI.x = 40;
 pauseGUI.y = 40;
+
+// MAIN MENU
+var mainMenuGUI = new PIXI.Container();
+
+var titleText = new PIXI.Text('-- TITLE --', textStyle);
+titleText.anchor.x = 0.5;
+mainMenuGUI.addChild(titleText);
+
+var btn_start = new PIXI.Text('Start game', textStyle);
+btn_start.anchor.x = 0.5;
+btn_start.y = 30;
+btn_start.interactive = true;
+btn_start.buttonMode = true;
+btn_start.on('pointerup', function() {
+  fg.removeChild(mainMenuGUI);
+  startGame();
+});
+mainMenuGUI.addChild(btn_start);
+
+var el = renderer.view;
+var reqFullScreen = el.requestFullScreen ||
+                    el.webkitRequestFullscreen ||
+                    el.mozRequestFullScreen ||
+                    el.msRequestFullscreen ||
+                    false;
+if(reqFullScreen) {
+  var btn_fullscreen = new PIXI.Text('Fullscreen', textStyle);
+  btn_fullscreen.anchor.x = 0.5;
+  btn_fullscreen.y = 60;
+  btn_fullscreen.interactive = true;
+  btn_fullscreen.buttonMode = true;
+  btn_fullscreen.on('pointerup', function() {
+    if(el.requestFullScreen) {
+      el.requestFullScreen()
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    } else if (el.mozRequestFullscreen) {
+      el.mozRequestFullScreen();
+    } else if (el.msRequestFullscreen) {
+      el.msRequestFullScreen();
+    } else {
+      console.log("I probably messed something up... Use F11 instead.");
+    }
+  });
+  mainMenuGUI.addChild(btn_fullscreen);
+}
+
+// Letters and other paper stuff.
+var PaperMenu = function(options) {
+  this.container = new PIXI.Container();
+  this.container.x = width/2;
+  this.container.y = height/2;
+
+  var img = options.customBG || "img/note.png";
+
+  this.bg = new PIXI.Sprite(res[img].texture);
+  this.bg.anchor.set(0.5, 0.5);
+
+  this.text = new PIXI.Text(options.message, letterStyle);
+  this.text.anchor.set(0, 0);
+  this.text.x = -128;
+  this.text.y = -140;
+
+  this.btn_close = new PIXI.Text(options.closeText, letterStyle);
+  this.btn_close.anchor.x = 1;
+  this.btn_close.x = 122;
+  this.btn_close.y = 122;
+  this.btn_close.interactive = true;
+  this.btn_close.buttonMode = true;
+  this.btn_close.on('pointerup', function() {
+    // Ooh, that's dirty
+    letter.close();
+    options.onRead();
+  });
+
+  this.container.addChild(this.bg);
+  this.container.addChild(this.text);
+  this.container.addChild(this.btn_close);
+  stage.addChild(this.container);
+
+  state = reading;
+};
+PaperMenu.prototype.update = function() {
+  this.container.x = width/2;
+  this.container.y = height/2;
+};
+PaperMenu.prototype.close = function() {
+  this.container.removeChildren();
+  stage.removeChild(this.container);
+  state = playing;
+};
+
 
 /*-------- Load resources --------*/
 PIXI.loader
     .add("img/man.png")
     .add("img/man_walk.png")
-    .add("img/planet.png")
+    .add("img/planet_crash.png")
     .add("img/big_planet.png")
     .add("img/projectile.png")
     .add("img/bottle.png")
+    .add("img/note.png")
+    .add("img/handwritten.png")
  // .add("img/arrow.png")
     .add("img/power_bar_empty.png")
     .add("img/power_bar_fill.png")
@@ -96,11 +215,27 @@ function onPlanet(x,y) {
 Everything is loaded. Get things ready!
 -------------------------------------------*/
 function setup() {
-  /*-------- Background --------*/
-  bg = new PIXI.Sprite(res["img/space.png"].texture);
-  stage.addChild(bg);
+  // Create background
+  background = new PIXI.Sprite(res["img/space.png"].texture);
+  bg.addChild(background);
 
-  /*-------- Sun --------*/
+  showMenu();
+  // startGame();
+  loop();
+}
+
+/*-------------------------------------------
+                                   START GAME
+
+Reset everything needed and start the game.
+-------------------------------------------*/
+function startGame() {
+  /*-------- Remove things --------*/
+  items = [];
+  stage.removeChildren();
+
+  /*-------- Start adding things back in --------*/
+  // Sun
   sun = new PIXI.Graphics();
   sun.rotation = Math.PI/1.5;
   sun.update = function () {
@@ -115,7 +250,7 @@ function setup() {
   };
   stage.addChild(sun);
 
-  /*-------- Moon --------*/
+  // Moon
   moon = new PIXI.Graphics();
   moon.update = function () {
     this.rotation = sun.rotation+Math.PI;
@@ -129,9 +264,8 @@ function setup() {
   };
   stage.addChild(moon);
 
-
-  /*-------- Planet --------*/
-  planet = new PIXI.Sprite(res["img/planet.png"].texture);
+  // Planet
+  planet = new PIXI.Sprite(res["img/planet_crash.png"].texture);
   planet.anchor.set(0.5, 0.5);
   planet.width = radius*2.7;
   planet.height = radius*2.7;
@@ -144,19 +278,11 @@ function setup() {
   // Create player
   player = new Player();
 
-  // Spawn bottles
+  // Start spawning things
   spawner = new Spawner();
 
   // Start game
   state = playing;
-}
-
-/*-------------------------------------------
-                                   START GAME
-Reset everything needed and start the game.
--------------------------------------------*/
-function startGame() {
-
 }
 
 /*-------------------------------------------
@@ -179,7 +305,7 @@ function loop () {
 
   state(delta);
 
-  renderer.render(stage);
+  renderer.render(container);
 }
 
 /*-------------------------------------------
@@ -188,8 +314,9 @@ Handle all player actions and gameplay.
 Called if var state == playing.
 -------------------------------------------*/
 function playing(delta) {
-  if(key["p"]) {
+  if(key["p"] || key["esc"]) {
     key["p"] = false;
+    key["esc"] = false;
     return startPause();
   }
 
@@ -219,25 +346,48 @@ Simple... Don't do anything.
 -------------------------------------------*/
 function startPause() {
   state = pause;
-  stage.addChild(pauseGUI);
+  fg.addChild(pauseGUI);
 }
 
 function endPause() {
   state = playing;
-  stage.removeChild(pauseGUI);
+  fg.removeChild(pauseGUI);
 }
 
 function pause(delta) {
-  if(key["p"]) {
+  if(key["p"] || key["esc"]) {
     key["p"] = false;
+    key["esc"] = false;
     endPause();
   }
 }
 
 /*-------------------------------------------
-
-              LET THE GAMES BEGIN!
+                                    MAIN MENU
 
 -------------------------------------------*/
-startGame();
-loop();
+function showMenu() {
+  state = mainMenu;
+  fg.addChild(mainMenuGUI);
+}
+
+function mainMenu(delta) {
+  mainMenuGUI.x = Math.floor(width/2);
+  mainMenuGUI.y = Math.floor(height/2 - mainMenuGUI.height/2);
+}
+
+/*-------------------------------------------
+                                    MAIN MENU
+
+-------------------------------------------*/
+function showLetter (id) {
+  letter = new PaperMenu(messages[id]);
+}
+
+function hideLetter() {
+  letter.close();
+}
+
+function reading (delta) {
+  letter.update();
+}
