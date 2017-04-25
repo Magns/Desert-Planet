@@ -31,7 +31,7 @@ window.addEventListener("keydown", function(e) {
   if(e.keyCode == 32) key["space"] = true;
   if(e.keyCode == 69) key["e"] = true;
   if(e.keyCode == 80) key["p"] = true;
-  if(e.keyCode == 27) key["esc"] = true;
+  // if(e.keyCode == 27) key["esc"] = true;
 });
 
 window.addEventListener("keyup", function(e) {
@@ -42,5 +42,5 @@ window.addEventListener("keyup", function(e) {
   if(e.keyCode == 32) key["space"] = false;
   if(e.keyCode == 69) key["e"] = false;
   if(e.keyCode == 80) key["p"] = false;
-  if(e.keyCode == 27) key["esc"] = false;
+  // if(e.keyCode == 27) key["esc"] = false;
 });

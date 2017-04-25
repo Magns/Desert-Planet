@@ -455,9 +455,8 @@ Handle all player actions and gameplay.
 Called if var state == playing.
 -------------------------------------------*/
 function playing(delta) {
-  if(key["p"] || key["esc"]) {
+  if(key["p"]) {
     key["p"] = false;
-    key["esc"] = false;
     return startPause();
   }
 
@@ -497,7 +496,7 @@ function endPause() {
 }
 
 function pause(delta) {
-  if(key["p"] || key["esc"]) {
+  if(key["p"]) {
     key["p"] = false;
     key["esc"] = false;
     endPause();
