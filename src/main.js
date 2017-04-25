@@ -375,6 +375,10 @@ function startGame() {
   items = [];
   stage.removeChildren();
 
+  messages[0].expired = false;
+  messages[2].expired = false;
+  messages[4].expired = false;
+
   /*-------- Start adding things back in --------*/
   // Sun
   sun = new PIXI.Graphics();
