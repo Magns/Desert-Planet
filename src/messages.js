@@ -100,6 +100,17 @@ var spam = [{
   closeText: "Whatever."
 },
 {
+  message: "Winning Notification\n\n" +
+           "You are a winner! See attached file for\n" +
+           "instructoins on how to lcaim your prize!",
+  closeText: "prize.zip"
+},
+{
+  message: "Save up to 70% on luxury travel. Let's\n" +
+            "make your dream vacation reality!",
+  closeText: "I want to go home."
+},
+{
   message: "Welcome to Papa Rnxgor's!\n\n" +
            "1. Plain Cheese ....... $9.25\n" +
            "2. Pepperoni .......... $10.00\n" +
